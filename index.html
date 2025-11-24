@@ -480,6 +480,7 @@
         <div class="card mb-4">
             <div class="flex overflow-x-auto" id="tabs">
                 <div class="tab active" onclick="showTab('partida', event)">🏆 Partida</div>
+                <div class="tab" onclick="showTab('sorteador', event)">🎲 Sorteador</div>
                 <div class="tab" onclick="showTab('times', event)">👥 Times</div>
                 <div class="tab" onclick="showTab('ranking', event)">📊 Rankings</div>
                 <div class="tab" onclick="showTab('historico', event)">📜 Histórico</div>
@@ -592,7 +593,21 @@
             </div>
         </div>
 
-        <div id="tab-times" class="tab-content hidden">
+        
+        <div id="tab-sorteador" class="tab-content hidden">
+            <div class="card p-4 mb-4">
+                <h2 class="text-lg font-bold mb-4">🎲 Sorteador de Times</h2>
+                <p class="text-sm mb-3">Cole os nomes (um por linha) ou separe por vírgula. Máximo por time: <strong>5</strong> jogadores.</p>
+                <textarea id="sorteadorInput" class="input-field mb-3" rows="6" placeholder="Ex: João&#10;Maria&#10;Carlos"></textarea>
+                <div class="flex gap-2 mb-3">
+                    <button class="btn-primary" onclick="sortearTimes()">🎯 Sortear Times</button>
+                    <button class="btn-secondary" onclick="clearSorteador()">🧹 Limpar</button>
+                </div>
+                <div id="sorteadorResult" class="space-y-3"></div>
+                <div class="text-xs mt-3 text-gray-500">Ao sortear, TODOS os times existentes serão substituídos pelos times sorteados (Opção A).</div>
+            </div>
+        </div>
+<div id="tab-times" class="tab-content hidden">
             <div class="card p-4 mb-4">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-bold">👥 Times (<span id="teamCount">0</span>/5)</h2>
@@ -627,7 +642,7 @@
         <div id="tab-historico" class="tab-content hidden">
             <div class="card p-4 mb-4">
                 <div class="flex gap-2 mb-4 flex-wrap">
-                    <button class="btn-secondary" onclick="exportHistory()">📤 Exportar (PDF)</button>
+                    <button class="btn-secondary" onclick="exportHistory()">📤 Exportar (Historico)</button>
                     <button class="btn-danger" onclick="clearHistory()">🗑️ Limpar</button>
                 </div>
                 <div id="historyList" class="space-y-3"></div>
@@ -1373,42 +1388,100 @@
             renderRankings();
         }
 
-        // exporta TODO o histórico em um único PDF (escolha do usuário)
         function exportHistory() {
-            if (!state.history || state.history.length === 0) return alert('Nenhuma partida no histórico para exportar');
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            let y = 10;
-            doc.setFontSize(14);
-            doc.text('Histórico de Partidas', 14, y);
-            y += 8;
-            doc.setFontSize(10);
 
-            state.history.forEach((m, idx) => {
-                const header = `${new Date(m.date).toLocaleString('pt-BR')} — ${m.home.name} ${m.home.score} x ${m.away.score} ${m.away.name}`;
-                doc.text(header, 14, y);
-                y += 6;
-                if (m.events && m.events.length > 0) {
-                    m.events.forEach(ev => {
-                        const team = state.teams.find(t => t.id === ev.teamId);
-                        const scorer = getPlayerNameById(ev.scorerId);
-                        const assist = ev.assistId ? getPlayerNameById(ev.assistId) : null;
-                        const line = `  - ${ev.time} | ${team ? team.name : 'Time'}: ${scorer}${assist ? ` (assist: ${assist})` : ''}`;
-                        const split = doc.splitTextToSize(line, 180);
-                        doc.text(split, 14, y);
-                        y += (split.length * 6);
-                        if (y > 270) { doc.addPage(); y = 10; }
-                    });
-                } else {
-                    doc.text('  - Sem eventos', 14, y);
-                    y += 6;
-                }
-                y += 4;
-                if (y > 270) { doc.addPage(); y = 10; }
+    if (!state.history || state.history.length === 0)
+        return alert('Nenhuma partida no histórico para exportar');
+
+    // ---- 1) COLETA DE DADOS ----
+    const { playersMap, goalkeeperStats } = computePlayerStats();
+
+    let txt = "";
+    txt += "===============================\n";
+    txt += "      HISTÓRICO DE PARTIDAS\n";
+    txt += "===============================\n\n";
+
+    // ---- 2) PARTIDAS ----
+    state.history.forEach(m => {
+        txt += `${new Date(m.date).toLocaleString('pt-BR')}\n`;
+        txt += `${m.home.name} ${m.home.score} x ${m.away.score} ${m.away.name}\n\n`;
+
+        if (m.events.length === 0) {
+            txt += "  - Sem eventos\n\n";
+        } else {
+            m.events.forEach(ev => {
+                const team = state.teams.find(t => t.id === ev.teamId);
+                const scorer = getPlayerNameById(ev.scorerId);
+                const assist = ev.assistId ? getPlayerNameById(ev.assistId) : null;
+
+                txt += `  - ${ev.time} | ${team ? team.name : 'Time'}: ${scorer}`;
+                if (assist) txt += ` (assist: ${assist})`;
+                txt += "\n";
             });
+            txt += "\n";
+        }
+        txt += "--------------------------------\n\n";
+    });
 
-            const filename = `historico_partidas_${new Date().toISOString().slice(0,10)}.pdf`;
-            doc.save(filename);
+    // ---- 3) RANKING DE ARTILHEIROS ----
+    txt += "===============================\n";
+    txt += "        RANKING: ARTILHEIROS\n";
+    txt += "===============================\n\n";
+
+    const artilheiros = Object.entries(playersMap)
+        .map(([id, d]) => ({
+            id,
+            name: d.name,
+            goals: d.goals,
+            assists: d.assists,
+            points: d.goals + d.assists
+        }))
+        .sort((a, b) => b.points - a.points || b.goals - a.goals);
+
+    if (artilheiros.length === 0) {
+        txt += "Nenhum dado disponível.\n\n";
+    } else {
+        artilheiros.forEach((p, i) => {
+            txt += `${i+1}. ${p.name} — ${p.goals}G / ${p.assists}A (Total: ${p.points})\n`;
+        });
+        txt += "\n";
+    }
+
+    // ---- 4) RANKING DE GOLEIROS ----
+    txt += "===============================\n";
+    txt += "      RANKING: GOLEIROS\n";
+    txt += "===============================\n\n";
+
+    const goleiros = Object.entries(goalkeeperStats)
+        .map(([id, d]) => ({
+            id,
+            name: getPlayerNameById(id),
+            conceded: d.conceded,
+            matches: d.matches,
+            media: d.matches > 0 ? (d.conceded / d.matches).toFixed(2) : "0.00"
+        }))
+        .sort((a, b) => a.media - b.media);
+
+    if (goleiros.length === 0) {
+        txt += "Nenhum dado disponível.\n\n";
+    } else {
+        goleiros.forEach((g, i) => {
+            txt += `${i+1}. ${g.name} — Sofridos: ${g.conceded} | Jogos: ${g.matches} | Média: ${g.media}\n`;
+        });
+        txt += "\n";
+    }
+
+    // ---- 5) DOWNLOAD DO TXT ----
+    const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = `historico_completo_${new Date().toISOString().slice(0,10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
         }
 
         function getPlayerNameById(playerId) {
@@ -1437,6 +1510,77 @@
             updateScoreboard();
             updateGoalSelects();
         });
-    </script>
+    
+        // --------- SORTEADOR: adiciona funcionalidade de sortear nomes em times (max 5 por time) ---------
+        function parseNamesInput(raw) {
+            if (!raw) return [];
+            // split by newlines or commas, trim, filter empties
+            const list = raw.split(/\n|,/).map(s => s.trim()).filter(Boolean);
+            // remove duplicate empty entries
+            return list;
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function sortearTimes() {
+            const raw = document.getElementById('sorteadorInput').value;
+            const names = parseNamesInput(raw);
+            if (!names || names.length === 0) return alert('Insira pelo menos um nome para sortear.');
+            
+            // Máximo por time = 5
+            const maxPerTeam = 5;
+            const numTeams = Math.ceil(names.length / maxPerTeam);
+            const shuffled = shuffleArray(names.slice());
+            
+            // Limpa todos os times existentes (Opção A)
+            state.teams = [];
+            
+            // Criar times dividindo os nomes em grupos de até 5
+            for (let t = 0; t < numTeams; t++) {
+                const start = t * maxPerTeam;
+                const group = shuffled.slice(start, start + maxPerTeam);
+                const teamObj = {
+                    id: uid('team'),
+                    name: `Time ${t + 1}`,
+                    players: group.map((nm, idx) => ({
+                        id: uid('player'),
+                        name: nm,
+                        isGoalkeeper: idx === 0 // primeiro jogador do time vira goleiro por padrão
+                    }))
+                };
+                state.teams.push(teamObj);
+            }
+            
+            saveState();
+            renderTeams();
+            updateTeamSelects();
+            
+            // Mostrar resultado no painel do sorteador para pré-visualização
+            const res = document.getElementById('sorteadorResult');
+            res.innerHTML = state.teams.map(t => `
+                <div class="team-card p-3 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="font-bold">${t.name} <span class="text-xs text-gray-500">(${t.players.length} jogadores)</span></div>
+                    </div>
+                    <div class="space-y-1">${t.players.map(p => `<div class="text-sm">${p.name}${p.isGoalkeeper ? ' 🧤' : ''}</div>`).join('')}</div>
+                </div>
+            `).join('');
+            
+            // ir automaticamente para aba Times para ver resultado (mantemos a aba Sorteador visível também)
+            // showTab('times');
+        }
+
+        function clearSorteador() {
+            document.getElementById('sorteadorInput').value = '';
+            document.getElementById('sorteadorResult').innerHTML = '';
+        }
+        // ---------------------------------------------------------------------------------------------
+</script>
 </body>
 </html>
