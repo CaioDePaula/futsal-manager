@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚽ Futsal Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0a4d0a 0%, #000000 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .btn-primary {
+            background: #0a8d0a;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover {
+            background: #0a6d0a;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: white;
+            color: #0a8d0a;
+            border: 2px solid #0a8d0a;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-secondary:hover {
+            background: #f0f0f0;
+        }
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .scoreboard {
+            background: linear-gradient(135deg, #0a6d0a 0%, #0a4d0a 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            border-bottom-color: #0a8d0a;
+            background: rgba(255,255,255,0.1);
+        }
+        .input-field {
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 14px;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #0a8d0a;
+        }
+        .soccer-ball {
+            display: inline-block;
+            font-size: 24px;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .goal-animation {
+            animation: goalFlash 0.5s;
+        }
+        @keyframes goalFlash {
+            0%, 100% { background: white; }
+            50% { background: #86efac; }
+        }
+        
+        /* Animação de Gol */
+        .goal-celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        .soccer-ball-fly {
+            position: absolute;
+            font-size: 60px;
+            animation: ballFly 2s ease-out forwards;
+        }
+        
+        @keyframes ballFly {
+            0% {
+                left: 50%;
+                top: 100%;
+                transform: translate(-50%, 0) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: translate(-50%, -200px) rotate(720deg) scale(1.5);
+            }
+            100% {
+                left: 50%;
+                top: -100px;
+                transform: translate(-50%, -400px) rotate(1440deg) scale(0.5);
+                opacity: 0;
+            }
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 1;
+            animation: confettiFall 3s ease-out forwards;
+        }
+        
+        @keyframes confettiFall {
+            0% {
+                top: -10px;
+                opacity: 1;
+            }
+            100% {
+                top: 100%;
+                opacity: 0;
+                transform: rotate(720deg);
+            }
+        }
+        
+        .goal-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            font-weight: 900;
+            color: #0a8d0a;
+            text-shadow: 4px 4px 0px #000, -2px -2px 0px #fff;
+            z-index: 10000;
+            animation: goalTextBounce 1s ease-out forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes goalTextBounce {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.3);
+                opacity: 1;
+            }
+            70% {
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+        }
+        
+        .goal-team-btn {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .goal-team-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .player-goal-btn {
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .player-goal-btn:hover {
+            border-color: #0a8d0a;
+            background: #f0fdf4;
+            transform: translateX(5px);
+        }
+        
+        .player-goal-btn.selected {
+            border-color: #0a8d0a;
+            background: #0a8d0a;
+            color: white;
+        }
+        
+        .player-goal-btn.assist-selected {
+            border-color: #0ea5e9;
+            background: #0ea5e9;
+            color: white;
+        }
+        select {
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        .team-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border-left: 4px solid #0a8d0a;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="container mx-auto p-4 max-w-7xl">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-white mb-2">
+                <span class="soccer-ball">⚽</span> Futsal Manager <span class="soccer-ball">⚽</span>
+            </h1>
+            <p class="text-white opacity-80 text-sm">Gerenciador Profissional de Partidas</p>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="card mb-4">
+            <div class="flex overflow-x-auto" id="tabs">
+                <div class="tab active" onclick="showTab('partida')">🏆 Partida</div>
+                <div class="tab" onclick="showTab('times')">👥 Times</div>
+                <div class="tab" onclick="showTab('ranking')">📊 Rankings</div>
+                <div class="tab" onclick="showTab('historico')">📜 Histórico</div>
+            </div>
+        </div>
+
+        <!-- Tab: Partida -->
+        <div id="tab-partida" class="tab-content">
+            <!-- Seleção de Times -->
+            <div class="card p-4 mb-4">
+                <h2 class="text-lg font-bold mb-3 flex items-center gap-2">
+                    🎯 Configurar Partida
+                </h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">🏠 Time Casa</label>
+                        <select id="selectHome" class="w-full">
+                            <option value="">Selecione o time casa</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">✈️ Time Visitante</label>
+                        <select id="selectAway" class="w-full">
+                            <option value="">Selecione o time visitante</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2 flex-wrap">
+                        <button class="btn-primary flex-1" onclick="startMatch()">▶️ Iniciar</button>
+                        <button class="btn-secondary" onclick="pauseMatch()">⏸️ Pausar</button>
+                        <button class="btn-secondary" onclick="resumeMatch()">▶️ Retomar</button>
+                        <button class="btn-secondary" onclick="resetTimer()">🔄 Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Placar -->
+            <div class="scoreboard mb-4" id="scoreboard">
+                <div class="text-center mb-4">
+                    <div class="text-6xl font-bold mb-2">
+                        <span id="scoreHome">0</span> - <span id="scoreAway">0</span>
+                    </div>
+                    <div class="text-2xl font-semibold mb-1">
+                        ⏱️ <span id="timerDisplay">10:00</span>
+                    </div>
+                    <div class="text-sm opacity-80" id="matchStatus">Aguardando início</div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                        <div class="text-sm opacity-80">Casa</div>
+                        <div class="text-xl font-bold" id="homeTeamName">-</div>
+                    </div>
+                    <div>
+                        <div class="text-sm opacity-80">Visitante</div>
+                        <div class="text-xl font-bold" id="awayTeamName">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registrar Gol -->
+            <div class="card p-4 mb-4">
+                <h3 class="font-bold text-center mb-4 text-lg">⚽ Registrar Gol</h3>
+                
+                <!-- Seleção de Time -->
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <button id="btnSelectHome" class="goal-team-btn border-4 border-green-600 bg-green-50 p-4 rounded-lg font-bold transition-all" onclick="selectGoalTeam('home')">
+                        🏠<br><span class="text-sm" id="goalBtnHomeName">Casa</span>
+                    </button>
+                    <button id="btnSelectAway" class="goal-team-btn border-2 border-gray-300 bg-white p-4 rounded-lg font-bold transition-all" onclick="selectGoalTeam('away')">
+                        ✈️<br><span class="text-sm" id="goalBtnAwayName">Visitante</span>
+                    </button>
+                </div>
+                
+                <!-- Lista de Jogadores -->
+                <div id="goalPlayersList" class="space-y-2 mb-3">
+                    <p class="text-gray-400 text-sm text-center">Selecione o time acima</p>
+                </div>
+                
+                <!-- Assistência -->
+                <div id="assistSection" class="hidden mb-3">
+                    <label class="block text-sm font-semibold mb-2 text-center">🎯 Assistência (opcional)</label>
+                    <div id="assistPlayersList" class="space-y-2"></div>
+                </div>
+                
+                <button id="btnConfirmGoal" class="btn-primary w-full text-lg py-3 hidden" onclick="confirmGoal()">
+                    ⚽ CONFIRMAR GOL!
+                </button>
+            </div>
+
+            <!-- Eventos da Partida -->
+            <div class="card p-4 mb-4">
+                <h3 class="font-bold mb-3">📋 Eventos da Partida</h3>
+                <div id="eventsList" class="space-y-2 max-h-60 overflow-y-auto">
+                    <p class="text-gray-500 text-sm">Nenhum evento registrado</p>
+                </div>
+            </div>
+
+            <!-- Controles da Partida -->
+            <div class="card p-4 mb-4">
+                <h3 class="font-bold mb-3">⚙️ Controles Rápidos</h3>
+                <div class="flex gap-2 mb-3">
+                    <button class="btn-secondary flex-1" onclick="adjustTime(-60)">-1 min</button>
+                    <button class="btn-secondary flex-1" onclick="adjustTime(60)">+1 min</button>
+                    <button class="btn-secondary flex-1" onclick="endTime()">⏱️ Fim</button>
+                </div>
+                <button class="btn-danger w-full" onclick="endMatch()">🏁 Terminar Partida</button>
+            </div>
+        </div>
+
+        <!-- Tab: Times -->
+        <div id="tab-times" class="tab-content hidden">
+            <div class="card p-4 mb-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold">👥 Times (<span id="teamCount">0</span>/5)</h2>
+                    <button class="btn-primary" onclick="addTeam()">➕ Novo Time</button>
+                </div>
+                <div id="teamsList" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- Tab: Rankings -->
+        <div id="tab-ranking" class="tab-content hidden">
+            <div class="card p-4 mb-4">
+                <h2 class="text-lg font-bold mb-4">🏆 Artilheiros</h2>
+                <div id="artilheirosList" class="space-y-2"></div>
+            </div>
+            <div class="card p-4 mb-4">
+                <h2 class="text-lg font-bold mb-4">🧤 Melhores Goleiros</h2>
+                <div id="goleirosList" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- Tab: Histórico -->
+        <div id="tab-historico" class="tab-content hidden">
+            <div class="card p-4 mb-4">
+                <div class="flex gap-2 mb-4 flex-wrap">
+                    <button class="btn-secondary" onclick="exportHistory()">📤 Exportar</button>
+                    <button class="btn-secondary" onclick="document.getElementById('importFile').click()">📥 Importar</button>
+                    <button class="btn-danger" onclick="clearHistory()">🗑️ Limpar</button>
+                    <input type="file" id="importFile" class="hidden" accept=".json" onchange="importHistory(event)">
+                </div>
+                <div id="historyList" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-white text-xs opacity-60 mt-6">
+            💾 Dados salvos localmente no navegador
+        </div>
+    </div>
+
+    <script>
+        // Estado global
+        let state = {
+            teams: [],
+            history: [],
+            currentMatch: {
+                home: null,
+                away: null,
+                timeLeft: 600,
+                running: false,
+                events: [],
+                score: { home: 0, away: 0 }
+            },
+            goalRegistration: {
+                selectedTeamSide: 'home',
+                selectedScorer: null,
+                selectedAssist: null
+            }
+        };
+
+        let timerInterval = null;
+
+        // Helpers
+        function uid(prefix = 'id') {
+            return `${prefix}_${Math.random().toString(36).slice(2,9)}`;
+        }
+
+        function loadState() {
+            try {
+                const teams = localStorage.getItem('futsal_teams_v2');
+                const history = localStorage.getItem('futsal_history_v2');
+                state.teams = teams ? JSON.parse(teams) : [];
+                state.history = history ? JSON.parse(history) : [];
+            } catch(e) {
+                console.error('Erro ao carregar:', e);
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('futsal_teams_v2', JSON.stringify(state.teams));
+            localStorage.setItem('futsal_history_v2', JSON.stringify(state.history));
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            
+            if (tabName === 'times') renderTeams();
+            if (tabName === 'ranking') renderRankings();
+            if (tabName === 'historico') renderHistory();
+        }
+
+        // Timer
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            state.currentMatch.running = true;
+            timerInterval = setInterval(() => {
+                if (state.currentMatch.timeLeft <= 0) {
+                    stopTimer();
+                    return;
+                }
+                state.currentMatch.timeLeft--;
+                updateTimerDisplay();
+            }, 1000);
+            updateMatchStatus();
+        }
+
+        function stopTimer() {
+            state.currentMatch.running = false;
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            updateMatchStatus();
+        }
+
+        function updateTimerDisplay() {
+            const mm = Math.floor(state.currentMatch.timeLeft / 60).toString().padStart(2, '0');
+            const ss = (state.currentMatch.timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').textContent = `${mm}:${ss}`;
+        }
+
+        function updateMatchStatus() {
+            const status = state.currentMatch.running ? '🟢 Em andamento' : '⏸️ Pausado';
+            document.getElementById('matchStatus').textContent = status;
+        }
+
+        // Match controls
+        function startMatch() {
+            const homeId = document.getElementById('selectHome').value;
+            const awayId = document.getElementById('selectAway').value;
+            
+            if (!homeId || !awayId) return alert('Selecione ambos os times!');
+            if (homeId === awayId) return alert('Escolha times diferentes!');
+            
+            const home = state.teams.find(t => t.id === homeId);
+            const away = state.teams.find(t => t.id === awayId);
+            
+            if (!home || !away) return alert('Times não encontrados');
+            if (home.players.length < 1 || away.players.length < 1) {
+                return alert('Cada time precisa ter pelo menos 1 jogador!');
+            }
+            
+            state.currentMatch = {
+                home: homeId,
+                away: awayId,
+                timeLeft: 600,
+                running: false,
+                events: [],
+                score: { home: 0, away: 0 }
+            };
+            
+            updateScoreboard();
+            updateGoalSelects();
+            startTimer();
+        }
+
+        function pauseMatch() {
+            stopTimer();
+        }
+
+        function resumeMatch() {
+            if (state.currentMatch.timeLeft === 0) {
+                return alert('Tempo esgotado! Use Reset Tempo para reiniciar.');
+            }
+            startTimer();
+        }
+
+        function resetTimer() {
+            stopTimer();
+            state.currentMatch.timeLeft = 600;
+            updateTimerDisplay();
+        }
+
+        function adjustTime(seconds) {
+            state.currentMatch.timeLeft = Math.max(0, Math.min(600, state.currentMatch.timeLeft + seconds));
+            updateTimerDisplay();
+        }
+
+        function endTime() {
+            state.currentMatch.timeLeft = 0;
+            stopTimer();
+            updateTimerDisplay();
+        }
+
+        function updateScoreboard() {
+            const home = state.teams.find(t => t.id === state.currentMatch.home);
+            const away = state.teams.find(t => t.id === state.currentMatch.away);
+            
+            document.getElementById('homeTeamName').textContent = home ? home.name : '-';
+            document.getElementById('awayTeamName').textContent = away ? away.name : '-';
+            document.getElementById('scoreHome').textContent = state.currentMatch.score.home;
+            document.getElementById('scoreAway').textContent = state.currentMatch.score.away;
+            
+            // Animação de gol
+            document.getElementById('scoreboard').classList.add('goal-animation');
+            setTimeout(() => {
+                document.getElementById('scoreboard').classList.remove('goal-animation');
+            }, 500);
+        }
+
+        function recordGoal() {
+            confirmGoal();
+        }
+        
+        function playGoalAnimation() {
+            // Criar container de celebração
+            const celebration = document.createElement('div');
+            celebration.className = 'goal-celebration';
+            document.body.appendChild(celebration);
+            
+            // Texto "GOOOL!"
+            const goalText = document.createElement('div');
+            goalText.className = 'goal-text';
+            goalText.textContent = 'GOOOL!';
+            document.body.appendChild(goalText);
+            
+            // Bola voando
+            const ball = document.createElement('div');
+            ball.className = 'soccer-ball-fly';
+            ball.textContent = '⚽';
+            celebration.appendChild(ball);
+            
+            // Gerar confetes
+            const colors = ['#0a8d0a', '#ffffff', '#000000', '#ffd700', '#ff6b6b', '#4ecdc4'];
+            const confettiCount = 50;
+            
+            for (let i = 0; i < confettiCount; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    confetti.style.animationDuration = (Math.random() * 1 + 2) + 's';
+                    celebration.appendChild(confetti);
+                }, i * 30);
+            }
+            
+            // Remover elementos após animação
+            setTimeout(() => {
+                celebration.remove();
+                goalText.remove();
+            }, 3000);
+        }
+
+        function updateGoalSelects() {
+            const side = state.goalRegistration.selectedTeamSide;
+            const teamId = side === 'home' ? state.currentMatch.home : state.currentMatch.away;
+            const team = state.teams.find(t => t.id === teamId);
+            
+            // Atualizar nomes nos botões
+            const homeTeam = state.teams.find(t => t.id === state.currentMatch.home);
+            const awayTeam = state.teams.find(t => t.id === state.currentMatch.away);
+            document.getElementById('goalBtnHomeName').textContent = homeTeam ? homeTeam.name : 'Casa';
+            document.getElementById('goalBtnAwayName').textContent = awayTeam ? awayTeam.name : 'Visitante';
+            
+            // Atualizar botões de seleção de time
+            document.getElementById('btnSelectHome').className = side === 'home' 
+                ? 'goal-team-btn border-4 border-green-600 bg-green-50 p-4 rounded-lg font-bold transition-all'
+                : 'goal-team-btn border-2 border-gray-300 bg-white p-4 rounded-lg font-bold transition-all';
+            document.getElementById('btnSelectAway').className = side === 'away'
+                ? 'goal-team-btn border-4 border-green-600 bg-green-50 p-4 rounded-lg font-bold transition-all'
+                : 'goal-team-btn border-2 border-gray-300 bg-white p-4 rounded-lg font-bold transition-all';
+            
+            const playersList = document.getElementById('goalPlayersList');
+            const assistList = document.getElementById('assistPlayersList');
+            
+            if (!team || team.players.length === 0) {
+                playersList.innerHTML = '<p class="text-gray-400 text-sm text-center">Nenhum jogador disponível</p>';
+                assistList.innerHTML = '';
+                document.getElementById('assistSection').classList.add('hidden');
+                document.getElementById('btnConfirmGoal').classList.add('hidden');
+                return;
+            }
+            
+            // Renderizar jogadores para marcar gol
+            playersList.innerHTML = '<label class="block text-sm font-semibold mb-2 text-center">⚽ Quem fez o gol?</label>' +
+                team.players.map(p => {
+                    const isSelected = state.goalRegistration.selectedScorer === p.id;
+                    return `
+                        <button class="player-goal-btn w-full ${isSelected ? 'selected' : ''}" 
+                                onclick="selectScorer('${p.id}')">
+                            ${p.name} ${p.isGoalkeeper ? '🧤' : ''}
+                        </button>
+                    `;
+                }).join('');
+            
+            // Se um jogador foi selecionado, mostrar assistência
+            if (state.goalRegistration.selectedScorer) {
+                document.getElementById('assistSection').classList.remove('hidden');
+                assistList.innerHTML = team.players
+                    .filter(p => p.id !== state.goalRegistration.selectedScorer)
+                    .map(p => {
+                        const isSelected = state.goalRegistration.selectedAssist === p.id;
+                        return `
+                            <button class="player-goal-btn w-full ${isSelected ? 'assist-selected' : ''}" 
+                                    onclick="selectAssist('${p.id}')">
+                                ${p.name} ${p.isGoalkeeper ? '🧤' : ''}
+                            </button>
+                        `;
+                    }).join('');
+                assistList.innerHTML += `
+                    <button class="player-goal-btn w-full ${state.goalRegistration.selectedAssist === null && state.goalRegistration.selectedScorer ? 'assist-selected' : ''}" 
+                            onclick="selectAssist(null)">
+                        Sem assistência
+                    </button>
+                `;
+                document.getElementById('btnConfirmGoal').classList.remove('hidden');
+            } else {
+                document.getElementById('assistSection').classList.add('hidden');
+                document.getElementById('btnConfirmGoal').classList.add('hidden');
+            }
+        }
+        
+        function selectGoalTeam(side) {
+            state.goalRegistration.selectedTeamSide = side;
+            state.goalRegistration.selectedScorer = null;
+            state.goalRegistration.selectedAssist = null;
+            updateGoalSelects();
+        }
+        
+        function selectScorer(playerId) {
+            state.goalRegistration.selectedScorer = playerId;
+            state.goalRegistration.selectedAssist = null;
+            updateGoalSelects();
+        }
+        
+        function selectAssist(playerId) {
+            state.goalRegistration.selectedAssist = playerId;
+            updateGoalSelects();
+        }
+        
+        function confirmGoal() {
+            const side = state.goalRegistration.selectedTeamSide;
+            const scorerId = state.goalRegistration.selectedScorer;
+            const assistId = state.goalRegistration.selectedAssist;
+            
+            if (!scorerId) return alert('Selecione quem fez o gol!');
+            
+            const teamId = side === 'home' ? state.currentMatch.home : state.currentMatch.away;
+            const elapsed = 600 - state.currentMatch.timeLeft;
+            const mm = Math.floor(elapsed / 60);
+            const ss = elapsed % 60;
+            const time = `${mm}:${String(ss).padStart(2,'0')}`;
+            
+            const event = {
+                id: uid('ev'),
+                time,
+                type: 'goal',
+                teamId,
+                scorerId,
+                assistId,
+                minute: mm,
+                second: ss
+            };
+            
+            state.currentMatch.events.push(event);
+            state.currentMatch.score[side]++;
+            
+            // Animação de Gol
+            playGoalAnimation();
+            
+            updateScoreboard();
+            renderEvents();
+            
+            // Reset seleção
+            state.goalRegistration.selectedScorer = null;
+            state.goalRegistration.selectedAssist = null;
+            updateGoalSelects();
+        }
+
+        function renderEvents() {
+            const container = document.getElementById('eventsList');
+            if (state.currentMatch.events.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">Nenhum evento registrado</p>';
+                return;
+            }
+            
+            container.innerHTML = state.currentMatch.events.map(ev => {
+                const team = state.teams.find(t => t.id === ev.teamId);
+                const scorer = getPlayerNameById(ev.scorerId);
+                const assist = ev.assistId ? getPlayerNameById(ev.assistId) : null;
+                return `
+                    <div class="border-l-4 border-green-600 pl-3 py-2 bg-green-50">
+                        <div class="font-semibold">⚽ ${ev.time} - ${team ? team.name : 'Time'}</div>
+                        <div class="text-sm text-gray-600">${scorer}${assist ? ` (assist: ${assist})` : ''}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function endMatch() {
+            if (!confirm('Deseja finalizar esta partida?')) return;
+            
+            stopTimer();
+            
+            const home = state.teams.find(t => t.id === state.currentMatch.home);
+            const away = state.teams.find(t => t.id === state.currentMatch.away);
+            
+            if (!home || !away) return alert('Times inválidos');
+            
+            const match = {
+                id: uid('match'),
+                date: new Date().toISOString(),
+                home: { id: home.id, name: home.name, score: state.currentMatch.score.home },
+                away: { id: away.id, name: away.name, score: state.currentMatch.score.away },
+                events: state.currentMatch.events,
+                duration: 600 - state.currentMatch.timeLeft
+            };
+            
+            state.history.unshift(match);
+            saveState();
+            
+            // Reset
+            state.currentMatch = {
+                home: null,
+                away: null,
+                timeLeft: 600,
+                running: false,
+                events: [],
+                score: { home: 0, away: 0 }
+            };
+            
+            document.getElementById('selectHome').value = '';
+            document.getElementById('selectAway').value = '';
+            updateScoreboard();
+            renderEvents();
+            
+            alert('Partida finalizada e salva no histórico!');
+        }
+
+        // Teams
+        function renderTeams() {
+            document.getElementById('teamCount').textContent = state.teams.length;
+            const container = document.getElementById('teamsList');
+            
+            if (state.teams.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center text-sm">Nenhum time cadastrado. Clique em "Novo Time" para começar!</p>';
+                return;
+            }
+            
+            container.innerHTML = state.teams.map(team => `
+                <div class="team-card p-3 rounded-lg">
+                    <div class="flex flex-col gap-2 mb-2">
+                        <input class="font-bold text-base border-b-2 border-transparent hover:border-green-600 focus:border-green-600 outline-none px-2 w-full" 
+                               value="${team.name}" 
+                               onchange="renameTeam('${team.id}', this.value)">
+                        <div class="flex gap-2">
+                            <button class="btn-secondary text-xs flex-1 py-2" onclick="addPlayerToTeam('${team.id}')">➕ Jogador</button>
+                            <button class="btn-danger text-xs px-3 py-2" onclick="removeTeam('${team.id}')">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="space-y-1.5">
+                        ${team.players.length === 0 ? '<p class="text-gray-400 text-xs text-center py-2">Nenhum jogador</p>' : ''}
+                        ${team.players.map(p => `
+                            <div class="flex flex-col bg-white p-2 rounded border gap-1.5">
+                                <input class="outline-none px-1 text-sm font-medium w-full" 
+                                       value="${p.name}" 
+                                       onchange="editPlayerName('${team.id}', '${p.id}', this.value)">
+                                <div class="flex gap-1 items-center justify-between">
+                                    ${p.isGoalkeeper ? 
+                                        '<span class="text-xs bg-green-600 text-white px-2 py-1 rounded flex-1 text-center">🧤 Goleiro</span>' : 
+                                        `<button class="text-xs btn-secondary py-1 px-2 flex-1" onclick="setGoalkeeper('${team.id}', '${p.id}')">Tornar GK</button>`
+                                    }
+                                    <button class="text-xs btn-secondary py-1 px-2" onclick="movePlayerPrompt('${p.id}')">↔️</button>
+                                    <button class="text-xs text-red-600 font-bold px-2" onclick="removePlayer('${team.id}', '${p.id}')">❌</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+            
+            updateTeamSelects();
+        }
+
+        function updateTeamSelects() {
+            const selectHome = document.getElementById('selectHome');
+            const selectAway = document.getElementById('selectAway');
+            const currentHome = selectHome.value;
+            const currentAway = selectAway.value;
+            
+            selectHome.innerHTML = '<option value="">Selecione o time casa</option>';
+            selectAway.innerHTML = '<option value="">Selecione o time visitante</option>';
+            
+            state.teams.forEach(t => {
+                selectHome.innerHTML += `<option value="${t.id}" ${t.id === currentHome ? 'selected' : ''}>${t.name}</option>`;
+                selectAway.innerHTML += `<option value="${t.id}" ${t.id === currentAway ? 'selected' : ''}>${t.name}</option>`;
+            });
+        }
+
+        function addTeam() {
+            if (state.teams.length >= 5) return alert('Máximo de 5 times permitido!');
+            const name = prompt('Nome do time:') || `Time ${state.teams.length + 1}`;
+            state.teams.push({
+                id: uid('team'),
+                name,
+                players: []
+            });
+            saveState();
+            renderTeams();
+        }
+
+        function removeTeam(teamId) {
+            if (!confirm('Remover este time e todos os seus jogadores?')) return;
+            state.teams = state.teams.filter(t => t.id !== teamId);
+            saveState();
+            renderTeams();
+        }
+
+        function renameTeam(teamId, name) {
+            const team = state.teams.find(t => t.id === teamId);
+            if (team) team.name = name;
+            saveState();
+        }
+
+        function addPlayerToTeam(teamId) {
+            const team = state.teams.find(t => t.id === teamId);
+            if (!team) return;
+            if (team.players.length >= 6) return alert('Máximo 6 jogadores por time!');
+            
+            const name = prompt('Nome do jogador:') || `Jogador ${team.players.length + 1}`;
+            team.players.push({
+                id: uid('player'),
+                name,
+                isGoalkeeper: team.players.length === 0
+            });
+            saveState();
+            renderTeams();
+        }
+
+        function removePlayer(teamId, playerId) {
+            if (!confirm('Remover este jogador?')) return;
+            const team = state.teams.find(t => t.id === teamId);
+            if (!team) return;
+            team.players = team.players.filter(p => p.id !== playerId);
+            if (team.players.length > 0 && !team.players.some(p => p.isGoalkeeper)) {
+                team.players[0].isGoalkeeper = true;
+            }
+            saveState();
+            renderTeams();
+        }
+
+        function editPlayerName(teamId, playerId, name) {
+            const team = state.teams.find(t => t.id === teamId);
+            if (!team) return;
+            const player = team.players.find(p => p.id === playerId);
+            if (player) player.name = name;
+            saveState();
+        }
+
+        function setGoalkeeper(teamId, playerId) {
+            const team = state.teams.find(t => t.id === teamId);
+            if (!team) return;
+            team.players.forEach(p => p.isGoalkeeper = (p.id === playerId));
+            saveState();
+            renderTeams();
+        }
+
+        function movePlayerPrompt(playerId) {
+            const dest = prompt('Mover para qual time? (digite o nome)');
+            if (!dest) return;
+            const target = state.teams.find(t => t.name.toLowerCase() === dest.toLowerCase());
+            if (!target) return alert('Time não encontrado!');
+            
+            let moving = null;
+            state.teams.forEach(team => {
+                const idx = team.players.findIndex(p => p.id === playerId);
+                if (idx >= 0) {
+                    moving = team.players.splice(idx, 1)[0];
+                }
+            });
+            
+            if (moving) {
+                moving.isGoalkeeper = false;
+                target.players.push(moving);
+                saveState();
+                renderTeams();
+            }
+        }
+
+        // Rankings
+        function computePlayerStats() {
+            const playersMap = {};
+            const goalkeeperConceded = {};
+            
+            state.history.forEach(match => {
+                match.events.forEach(ev => {
+                    if (ev.type === 'goal') {
+                        if (ev.scorerId) {
+                            playersMap[ev.scorerId] = playersMap[ev.scorerId] || { 
+                                name: getPlayerNameById(ev.scorerId), 
+                                goals: 0, 
+                                assists: 0 
+                            };
+                            playersMap[ev.scorerId].goals++;
+                        }
+                        if (ev.assistId) {
+                            playersMap[ev.assistId] = playersMap[ev.assistId] || { 
+                                name: getPlayerNameById(ev.assistId), 
+                                goals: 0, 
+                                assists: 0 
+                            };
+                            playersMap[ev.assistId].assists++;
+                        }
+                    }
+                });
+                
+                const concededHome = match.away.score;
+                const concededAway = match.home.score;
+                const homeGKId = findGoalkeeperId(match.home.id);
+                const awayGKId = findGoalkeeperId(match.away.id);
+                
+                if (homeGKId) {
+                    goalkeeperConceded[homeGKId] = goalkeeperConceded[homeGKId] || { conceded: 0, matches: 0, cleanSheets: 0 };
+                    goalkeeperConceded[homeGKId].conceded += concededHome;
+                    goalkeeperConceded[homeGKId].matches++;
+                    if (concededHome === 0) goalkeeperConceded[homeGKId].cleanSheets++;
+                }
+                if (awayGKId) {
+                    goalkeeperConceded[awayGKId] = goalkeeperConceded[awayGKId] || { conceded: 0, matches: 0, cleanSheets: 0 };
+                    goalkeeperConceded[awayGKId].conceded += concededAway;
+                    goalkeeperConceded[awayGKId].matches++;
+                    if (concededAway === 0) goalkeeperConceded[awayGKId].cleanSheets++;
+                }
+            });
+            
+            return { playersMap, goalkeeperConceded };
+        }
+
+        function renderRankings() {
+            const { playersMap, goalkeeperConceded } = computePlayerStats();
+            
+            // Artilheiros
+            const artilheiros = Object.entries(playersMap).map(([id, data]) => ({
+                id,
+                name: data.name,
+                goals: data.goals,
+                assists: data.assists,
+                points: data.goals + data.assists
+            })).sort((a, b) => b.points - a.points || b.goals - a.goals);
+            
+            const artilheirosContainer = document.getElementById('artilheirosList');
+            if (artilheiros.length === 0) {
+                artilheirosContainer.innerHTML = '<p class="text-gray-500 text-center">Nenhum dado disponível ainda</p>';
+            } else {
+                let lastPoints = null, rank = 0, count = 0;
+                artilheirosContainer.innerHTML = artilheiros.slice(0, 20).map(p => {
+                    count++;
+                    if (p.points !== lastPoints) { rank = count; lastPoints = p.points; }
+                    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+                    return `
+                        <div class="border-l-4 ${rank <= 3 ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300 bg-white'} p-3 rounded">
+                            <div class="font-bold">${medal} ${p.name}</div>
+                            <div class="text-sm text-gray-600">⚽ Gols: ${p.goals} | 🎯 Assists: ${p.assists} | 📊 Pontos: ${p.points}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // Goleiros
+            const goleiros = Object.entries(goalkeeperConceded).map(([id, data]) => ({
+                id,
+                name: getPlayerNameById(id),
+                conceded: data.conceded,
+                matches: data.matches,
+                cleanSheets: data.cleanSheets
+            })).sort((a, b) => b.cleanSheets - a.cleanSheets || a.conceded - b.conceded);
+            
+            const goleirosContainer = document.getElementById('goleirosList');
+            if (goleiros.length === 0) {
+                goleirosContainer.innerHTML = '<p class="text-gray-500 text-center">Nenhum dado disponível ainda</p>';
+            } else {
+                let lastKey = null, rank = 0, count = 0;
+                goleirosContainer.innerHTML = goleiros.slice(0, 20).map(g => {
+                    count++;
+                    const key = `${g.cleanSheets}_${g.conceded}`;
+                    if (key !== lastKey) { rank = count; lastKey = key; }
+                    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+                    return `
+                        <div class="border-l-4 ${rank <= 3 ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} p-3 rounded">
+                            <div class="font-bold">${medal} ${g.name}</div>
+                            <div class="text-sm text-gray-600">🧤 Clean Sheets: ${g.cleanSheets} | ⚽ Sofridos: ${g.conceded} | 🎮 Partidas: ${g.matches}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // History
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            if (state.history.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">Nenhuma partida no histórico</p>';
+                return;
+            }
+            
+            container.innerHTML = state.history.map(m => `
+                <div class="card p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <div class="font-bold text-lg">${m.home.name} ${m.home.score} x ${m.away.score} ${m.away.name}</div>
+                            <div class="text-xs text-gray-500">${new Date(m.date).toLocaleString('pt-BR')}</div>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            ⏱️ ${Math.floor(m.duration/60)}m ${m.duration%60}s
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="font-semibold text-sm mb-1">Eventos:</div>
+                        ${m.events.length === 0 ? '<p class="text-gray-400 text-xs">Sem eventos</p>' : ''}
+                        ${m.events.map(ev => {
+                            const team = state.teams.find(t => t.id === ev.teamId);
+                            const scorer = getPlayerNameById(ev.scorerId);
+                            const assist = ev.assistId ? getPlayerNameById(ev.assistId) : null;
+                            return `
+                                <div class="text-xs border-l-2 border-green-600 pl-2 py-1">
+                                    ⚽ ${ev.time} - ${team ? team.name : 'Time'}: ${scorer}${assist ? ` (${assist})` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function clearHistory() {
+            if (!confirm('Deseja limpar todo o histórico? Esta ação não pode ser desfeita!')) return;
+            state.history = [];
+            saveState();
+            renderHistory();
+            renderRankings();
+        }
+
+        function exportHistory() {
+            const dataStr = JSON.stringify(state.history, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `futsal_history_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importHistory(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (!Array.isArray(parsed)) throw new Error('Formato inválido');
+                    state.history = parsed;
+                    saveState();
+                    alert('Histórico importado com sucesso!');
+                    renderHistory();
+                    renderRankings();
+                } catch (err) {
+                    alert('Erro ao importar: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // Helper functions
+        function getPlayerNameById(playerId) {
+            if (!playerId) return '(ex)';
+            for (const t of state.teams) {
+                for (const p of t.players) {
+                    if (p.id === playerId) return p.name;
+                }
+            }
+            return 'Desconhecido';
+        }
+
+        function findGoalkeeperId(teamId) {
+            const team = state.teams.find(t => t.id === teamId);
+            if (!team) return null;
+            const gk = team.players.find(p => p.isGoalkeeper);
+            return gk ? gk.id : (team.players[0] ? team.players[0].id : null);
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            renderTeams();
+            updateTeamSelects();
+            updateTimerDisplay();
+            updateMatchStatus();
+            updateScoreboard();
+            updateGoalSelects();
+        });
+    </script>
+</body>
+</html>
